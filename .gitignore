@@ -5,3 +5,8 @@
 *.o
 .DS_Store
 node_modules/
+
+bsconfig.json
+lib/
+package-lock.json
+src/

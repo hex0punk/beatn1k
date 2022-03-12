@@ -74,8 +74,12 @@ let create_fold_up = (url_left: string, url_right: string, line_size: int) : str
       |> Array.fold_left((res, line)  => res ++ "\n" ++ line, "")
 }
 
+let url_left = Array.get(Sys.argv, 1)
+let url_right = Array.get(Sys.argv, 2)
+let words_num = Array.get(Sys.argv, 3)
 
-let url_left = "https://www.theatlantic.com/magazine/archive/2022/04/jack-kerouac-neal-cassady-friendship/622829/"
-let url_right = "https://www.theatlantic.com/international/archive/2022/03/afghanistan-withdrawal-left-behind-women-soldiers/627022/"
-create_fold_up(url_left, url_right, 16)
+int_of_string(words_num) |> create_fold_up(url_left, url_right)
   |> print_string
+
+// "https://www.theatlantic.com/magazine/archive/2022/04/jack-kerouac-neal-cassady-friendship/622829/"
+// "https://www.theatlantic.com/international/archive/2022/03/afghanistan-withdrawal-left-behind-women-soldiers/627022/"

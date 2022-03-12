@@ -3,6 +3,8 @@ open Cohttp_lwt_unix
 open Soup
 open Str
 
+Random.init(int_of_float(Unix.time()));
+
 let join_words = (arr) =>
   Array.fold_left((res, word)  => res ++ word ++ " ", "", arr)
   |> String.trim
@@ -41,6 +43,24 @@ let get_lines =  (max_words: int, text: string) : array(string) => {
   process(0, [||])
 }
 
+let rand_get_lines =  (max_words: int, words: array(string)) : array(string) => {
+  let rec process = (counter: int, acc: array(string)) : array(string) => {
+    let limit = Random.int(max_words)
+    let delim = counter + limit;
+    switch(Array.length(words) > delim) {
+      | true =>
+          Array.sub(words, counter, limit)
+          |> join_words
+          |> Array.make(1)
+          |> Array.append(acc) 
+          |> process(counter+(limit))
+      | false => acc
+    }
+  }
+
+  process(0, [||])
+}
+
 let cut_strings = (left: bool, by: int, lines: array(string)) : array(string) => {
   lines |> Array.map(line => {
     let words =  regexp(" ") |> split(_, line) |> Array.of_list
@@ -54,9 +74,45 @@ let cut_strings = (left: bool, by: int, lines: array(string)) : array(string) =>
   })
 }
 
+let rdn_cut_up = (max_words: int, text: string) : array(string) => {
+  let words =  regexp(" ") |> split(_, text) |> Array.of_list
+  let rec process = (counter: int, acc: array(string)) : array(string) => {
+    let limit = Random.int(max_words)
+    let delim = counter + limit;
+    switch(Array.length(words) > delim) {
+      | true =>
+          Array.sub(words, counter, limit)
+          |> join_words
+          |> Array.make(1)
+          |> Array.append(acc) 
+          |> process(counter+(limit))
+      | false => acc
+    }
+  }
+
+  process(0, [||])
+}
+
 let combine_halfs = (left: array(string), right: array(string)) : array(string) => {
   left |> Array.mapi((idx, line) => line ++ " " ++ right[idx])
 } 
+
+let shuffle = (words: array(string)) : array(string) => {
+  let len = Array.length(words)
+  let rec process = (idx: int) : array(string) => {
+    if (idx > 0) {
+      let r = Random.int(idx+1)
+      let temp = words[idx]
+      words[idx] = words[r]
+      words[r] = temp
+      process(idx-1)
+    } else {
+      words
+    }
+  }
+
+  process(len-1)
+}
 
 let create_fold_up = (url_left: string, url_right: string, line_size: int) : string => {
   let left_half = fetchBody(url_left)
@@ -74,12 +130,42 @@ let create_fold_up = (url_left: string, url_right: string, line_size: int) : str
       |> Array.fold_left((res, line)  => res ++ "\n" ++ line, "")
 }
 
-let url_left = Array.get(Sys.argv, 1)
-let url_right = Array.get(Sys.argv, 2)
-let words_num = Array.get(Sys.argv, 3)
+let get_stanzas = (num_lines: int, lines: array(string)) => {
+  let len = Array.length(lines)
+  let start = Random.int(len-1)
+  if (start + num_lines > len-1) {
+    Array.sub(lines, start, len)
+  } else {
+    Array.sub(lines, start, num_lines)
+  }
+}
 
-int_of_string(words_num) |> create_fold_up(url_left, url_right)
-  |> print_string
+let create_cut_up = (url: string, max: int) => {
+  fetchBody(url)
+    |> Lwt_main.run
+    |> text_from_body
+    |> rdn_cut_up(max)
+    |> shuffle
+    |> rand_get_lines(max + 4)
+    |> get_stanzas(12) 
+    // |> Array.iter(print_endline)
+    |> Array.fold_left((res, line)  => res ++ "\n" ++ line, "")
+    |> global_replace(regexp("^.*[\\(\\)\"\\].*$"), "")
+    |> print_endline
+
+
+
+        //  |> global_replace(regexp("^.*[\\(\\)].*$"), "")
+}
+
+// let url_left = Array.get(Sys.argv, 1)
+// let url_right = Array.get(Sys.argv, 2)
+// let words_num = Array.get(Sys.argv, 3)
+
+// int_of_string(words_num) |> create_fold_up(url_left, url_right)
+//   |> print_string
+
+create_cut_up("https://www.theatlantic.com/magazine/archive/2022/04/jack-kerouac-neal-cassady-friendship/622829/", 4) 
 
 // "https://www.theatlantic.com/magazine/archive/2022/04/jack-kerouac-neal-cassady-friendship/622829/"
 // "https://www.theatlantic.com/international/archive/2022/03/afghanistan-withdrawal-left-behind-women-soldiers/627022/"

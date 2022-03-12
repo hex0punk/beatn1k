@@ -1,0 +1,8 @@
+;; dune
+(executable
+ (name dadait)
+ (libraries 
+  str
+  tls
+  lambdasoup
+  cohttp-lwt-unix))

@@ -81,6 +81,7 @@ let rdn_cut_up = (max_words: int, text: string) : array(string) => {
     let delim = counter + limit;
     switch(Array.length(words) > delim) {
       | true =>
+          // TODO: consider trimming extra white space here
           Array.sub(words, counter, limit)
           |> join_words
           |> Array.make(1)
@@ -140,7 +141,7 @@ let get_stanzas = (num_lines: int, lines: array(string)) => {
   }
 }
 
-let create_cut_up = (url: string, max: int) => {
+let create_cut_up = (url: string, max: int) : string => {
   fetchBody(url)
     |> Lwt_main.run
     |> text_from_body
@@ -149,15 +150,30 @@ let create_cut_up = (url: string, max: int) => {
     |> rand_get_lines(max + 4)
     |> get_stanzas(12) 
     // |> Array.iter(print_endline)
-    |> Array.fold_left((res, line)  => res ++ "\n" ++ line, "")
-    |> global_replace(regexp("^.*[\\(\\)\"\\].*$"), "")
-    |> print_endline
-
-
-
+    |> Array.fold_left((res, line)  => res ++ "\n" ++ "<p>" ++ line ++ "</p>", "")
+    |> global_replace(regexp("[\"\\(\\)]"), "")
+    |> global_replace(regexp("  +/g"), " ")
         //  |> global_replace(regexp("^.*[\\(\\)].*$"), "")
 }
 
+let get_template = (file: string) => {
+  let file_in_ch = open_in(file);
+  let fs = Stream.from(_i => {
+    switch(input_line(file_in_ch)) {
+      | line => Some(line)
+      | exception(End_of_file) => None
+    };
+  });
+
+  let rec process = (text: string) : string => {
+     switch(Stream.next(fs)) {
+       | line => process(text ++ line)
+       | exception Stream.Failure => text
+     }
+  }
+
+  process("")
+}
 // let url_left = Array.get(Sys.argv, 1)
 // let url_right = Array.get(Sys.argv, 2)
 // let words_num = Array.get(Sys.argv, 3)
@@ -165,7 +181,21 @@ let create_cut_up = (url: string, max: int) => {
 // int_of_string(words_num) |> create_fold_up(url_left, url_right)
 //   |> print_string
 
-create_cut_up("https://www.theatlantic.com/magazine/archive/2022/04/jack-kerouac-neal-cassady-friendship/622829/", 4) 
+let cu = create_cut_up("https://theanarchistlibrary.org/library/david-graeber-what-s-the-point-if-we-can-t-have-fun-2?utm_source=pocket_mylist", 4) 
+let t = Unix.localtime (Unix.time ())
+let (day, month, year) = (t.tm_mday, t.tm_mon, t.tm_year)
+let ds = Printf.sprintf("Generated on %04d-%02d-%02d\n", (1900 + year), (month + 1), day)
+let tmpl = get_template("./template.html")
+let idx = global_replace(regexp("POEMHERE"), cu, tmpl) |> global_replace(regexp("DATEHERE"), ds)
 
+let out = open_out("index.html")
+Printf.fprintf(out, "%s\n", idx)
+close_out(out)
+
+
+// let soup = parse(tmpl)
+// let tn = create_text("yayyyy")
+// let r = wrap((soup $ ".poem" |> R.child),(create_element("p", ~inner_text="asasasasasasasasasasasasasasasasas")))
+// soup |> to_string |> print_endline
 // "https://www.theatlantic.com/magazine/archive/2022/04/jack-kerouac-neal-cassady-friendship/622829/"
 // "https://www.theatlantic.com/international/archive/2022/03/afghanistan-withdrawal-left-behind-women-soldiers/627022/"

@@ -10,3 +10,4 @@ bsconfig.json
 lib/
 package-lock.json
 src/
+.merlin

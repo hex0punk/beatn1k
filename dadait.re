@@ -174,28 +174,27 @@ let get_template = (file: string) => {
 
   process("")
 }
+
+let get_date_str = () : string => {
+  let t = Unix.localtime (Unix.time ())
+  let (day, month, year) = (t.tm_mday, t.tm_mon, t.tm_year)
+  Printf.sprintf("Generated on %04d-%02d-%02d\n", (1900 + year), (month + 1), day)
+}
+
 // let url_left = Array.get(Sys.argv, 1)
 // let url_right = Array.get(Sys.argv, 2)
 // let words_num = Array.get(Sys.argv, 3)
 
 // int_of_string(words_num) |> create_fold_up(url_left, url_right)
 //   |> print_string
+let source = "https://theanarchistlibrary.org/library/david-graeber-what-s-the-point-if-we-can-t-have-fun-2?utm_source=pocket_mylist";
+let cu = create_cut_up(source, 4) 
+let tmpl = get_template("./web/template.html")
+let ds = get_date_str()
+let idx = global_replace(regexp("POEMHERE"), cu, tmpl) 
+|> global_replace(regexp("DATEHERE"), ds)
+|> global_replace(regexp("SOURCEHERE"), source)
 
-let cu = create_cut_up("https://theanarchistlibrary.org/library/david-graeber-what-s-the-point-if-we-can-t-have-fun-2?utm_source=pocket_mylist", 4) 
-let t = Unix.localtime (Unix.time ())
-let (day, month, year) = (t.tm_mday, t.tm_mon, t.tm_year)
-let ds = Printf.sprintf("Generated on %04d-%02d-%02d\n", (1900 + year), (month + 1), day)
-let tmpl = get_template("./template.html")
-let idx = global_replace(regexp("POEMHERE"), cu, tmpl) |> global_replace(regexp("DATEHERE"), ds)
-
-let out = open_out("index.html")
+let out = open_out("web/index.html")
 Printf.fprintf(out, "%s\n", idx)
 close_out(out)
-
-
-// let soup = parse(tmpl)
-// let tn = create_text("yayyyy")
-// let r = wrap((soup $ ".poem" |> R.child),(create_element("p", ~inner_text="asasasasasasasasasasasasasasasasas")))
-// soup |> to_string |> print_endline
-// "https://www.theatlantic.com/magazine/archive/2022/04/jack-kerouac-neal-cassady-friendship/622829/"
-// "https://www.theatlantic.com/international/archive/2022/03/afghanistan-withdrawal-left-behind-women-soldiers/627022/"

@@ -156,7 +156,7 @@ let create_cut_up = (url: string, max: int) : string => {
         //  |> global_replace(regexp("^.*[\\(\\)].*$"), "")
 }
 
-let get_template = (file: string) => {
+let get_file = (file: string) => {
   let file_in_ch = open_in(file);
   let fs = Stream.from(_i => {
     switch(input_line(file_in_ch)) {
@@ -178,7 +178,13 @@ let get_template = (file: string) => {
 let get_date_str = () : string => {
   let t = Unix.localtime (Unix.time ())
   let (day, month, year) = (t.tm_mday, t.tm_mon, t.tm_year)
-  Printf.sprintf("Generated on %04d-%02d-%02d\n", (1900 + year), (month + 1), day)
+  Printf.sprintf("Generated on %04d-%02d-%02d at %02d:%02d\n", (1900 + year), (month + 1), day, t.tm_hour, t.tm_min)
+}
+
+let random_source = (text: string) : string => {
+  let sources =  regexp("\n") |> split(_, text) |> Array.of_list
+  let idx = Array.length(sources) |> Random.int
+  sources[idx]
 }
 
 // let url_left = Array.get(Sys.argv, 1)
@@ -187,9 +193,10 @@ let get_date_str = () : string => {
 
 // int_of_string(words_num) |> create_fold_up(url_left, url_right)
 //   |> print_string
-let source = "https://theanarchistlibrary.org/library/david-graeber-what-s-the-point-if-we-can-t-have-fun-2?utm_source=pocket_mylist";
+let all_sources = get_file("./web/sources.txt")
+let source = random_source(all_sources);
 let cu = create_cut_up(source, 4) 
-let tmpl = get_template("./web/template.html")
+let tmpl = get_file("./web/template.html")
 let ds = get_date_str()
 let idx = global_replace(regexp("POEMHERE"), cu, tmpl) 
 |> global_replace(regexp("DATEHERE"), ds)

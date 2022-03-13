@@ -178,7 +178,7 @@ let get_file = (file: string) => {
 let get_date_str = () : string => {
   let t = Unix.localtime (Unix.time ())
   let (day, month, year) = (t.tm_mday, t.tm_mon, t.tm_year)
-  Printf.sprintf("Generated on %04d-%02d-%02d at %02d:%02d\n", (1900 + year), (month + 1), day, t.tm_hour, t.tm_min)
+  Printf.sprintf("Generated on %04d-%02d-%02d at %02d:%02d UTC\n", (1900 + year), (month + 1), day, t.tm_hour, t.tm_min)
 }
 
 let random_source = (text: string) : string => {
@@ -193,6 +193,7 @@ let random_source = (text: string) : string => {
 
 // int_of_string(words_num) |> create_fold_up(url_left, url_right)
 //   |> print_string
+let run_num = (get_file("./web/count.txt") |> int_of_string) + 1 |> string_of_int
 let all_sources = get_file("./web/sources.txt")
 let source = random_source(all_sources);
 let cu = create_cut_up(source, 4) 
@@ -201,7 +202,12 @@ let ds = get_date_str()
 let idx = global_replace(regexp("POEMHERE"), cu, tmpl) 
 |> global_replace(regexp("DATEHERE"), ds)
 |> global_replace(regexp("SOURCEHERE"), source)
+|> global_replace(regexp("RUNHERE"), run_num)
 
 let out = open_out("web/index.html")
 Printf.fprintf(out, "%s\n", idx)
+close_out(out)
+
+let out = open_out("web/count.txt")
+Printf.fprintf(out, "%s\n", run_num)
 close_out(out)

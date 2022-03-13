@@ -5,7 +5,7 @@
 *.o
 .DS_Store
 node_modules/
-
+runner.sh
 bsconfig.json
 lib/
 package-lock.json

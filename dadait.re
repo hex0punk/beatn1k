@@ -44,20 +44,9 @@ let cut_array = (arr: array(string), from: int, len: int, res: array(string)) : 
   |> Array.append(res)
 }
 
-let section =  (max: int, words: array(string)) : array(string) => {
-  let rec process = (counter: int, acc: array(string)) : array(string) => {
-    let delim = counter + max;
-    switch(Array.length(words) > delim) {
-    | true => cut_array(words, counter, max, acc) |> process(counter+(max))
-    | false => acc
-    }
-  }
-  process(0, [||])
-}
-
-let rand_section =  (max: int, arr: array(string)) : array(string) => {
+let section =  (~rand=false, ~max: int, arr: array(string), ()) : array(string) => {
   let rec pick = (counter: int, acc: array(string)) : array(string) => {
-    let limit = Random.int(max)
+    let limit = if (rand) Random.int(max) else max;
     let delim = counter + limit;
     switch(Array.length(arr) > delim) {
     | true => cut_array(arr, counter, limit, acc) |> pick(counter+(limit))
@@ -66,6 +55,8 @@ let rand_section =  (max: int, arr: array(string)) : array(string) => {
   }
   pick(0, [||])
 }
+
+let rand_section = section(~rand=true)
 
 let words_from_text = (text: string) : array(string) => {
   regexp(" ") |> split(_, text) |> Array.of_list
@@ -109,7 +100,7 @@ let lines_from_url = (url: string, line_size: int, left: bool) : array(string) =
   |> Lwt_main.run
   |> text_from_body
   |> words_from_text
-  |> section(line_size)
+  |> section(~max=line_size, _, ())
   |> cut_strings(left, line_size) 
 }
 
@@ -136,9 +127,9 @@ let create_cut_up = (url: string, max: int) : string => {
     |> Lwt_main.run
     |> text_from_body
     |> words_from_text
-    |> rand_section(max)
+    |> rand_section(~max=max, _, ())
     |> shuffle_array
-    |> rand_section(max + 4)
+    |> rand_section(~max=max + 4, _, ())
     |> get_stanzas(12) 
     |> Array.fold_left((res, line)  => res ++ "\n" ++ "<p>" ++ line ++ "</p>", "")
     |> global_replace(regexp("[\"\\(\\)]"), "")

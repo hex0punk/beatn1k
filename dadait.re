@@ -147,7 +147,7 @@ let get_file = (file: string) => {
 
   let rec process = (text: string) : string => {
      switch(Stream.next(fs)) {
-     | line => process(text ++ line)
+     | line => process(text ++ line ++ "\n")
      | exception Stream.Failure => text
      }
   }
@@ -157,6 +157,7 @@ let get_file = (file: string) => {
 
 let random_source = (text: string) : string => {
   let sources =  regexp("\n") |> split(_, text) |> Array.of_list
+  // sources |> Array.iter(print_endline)
   let idx = Array.length(sources) |> Random.int
   sources[idx]
 }
@@ -167,7 +168,7 @@ let random_source = (text: string) : string => {
 
 // int_of_string(words_num) |> create_fold_up(url_left, url_right)
 //   |> print_string
-let run_num = (get_file(file_counter) |> int_of_string) + 1 |> string_of_int
+let run_num = (get_file(file_counter) |> String.trim |> int_of_string) + 1 |> string_of_int
 let all_sources = get_file(file_sources)
 let source = random_source(all_sources);
 let cu = create_cut_up(source, 4) 

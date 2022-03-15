@@ -16,9 +16,12 @@ let get_date_str = () : string => {
   Printf.sprintf("Generated on %04d-%02d-%02d at %02d:%02d UTC\n", (1900 + year), (month + 1), day, t.tm_hour, t.tm_min)
 }
 
-let join_words = (arr) =>
-  Array.fold_left((res, word)  => res ++ word ++ " ", "", arr)
+let join_words = (arr) => {
+  Array.fold_left((res, word) => 
+    // fix to a weird bug
+    res ++ word ++ " " |> global_replace(regexp("\n"), ""),"", arr) 
   |> String.trim
+}
 
 let fetchBody = (url) => {
   let url = Uri.of_string(url);
@@ -48,7 +51,6 @@ let section =  (~rand=false, ~max: int, arr: array(string), ()) : array(string) 
   let rec pick = (counter: int, acc: array(string)) : array(string) => {
     let limit = if (rand) Random.int(max) else max;
     let delim = counter + limit;
-    print_string("what\n")
     switch(Array.length(arr) > delim) {
     | true => cut_array(arr, counter, limit, acc) |> pick(counter+(limit))
     | false => acc
@@ -63,25 +65,23 @@ let words_from_text = (text: string) : array(string) => {
   regexp(" ") |> split(_, text) |> Array.of_list
 }
 
-let cut_strings = (left: bool, by: int, lines: array(string)) : array(string) => {
+let cut_lines = (left: bool, by: int, lines: array(string)) : array(string) => {
   lines |> Array.map(line => {
     let words =  regexp(" ") |> split(_, line) |> Array.of_list
-    // error is happening here
-    print_string("here\n")
+    let l = Array.length(words) 
     switch(left) {
-    | true => 
-      print_string("true")
-      Array.sub(words, 0, by) |> join_words
-    | false => 
-      print_string("false")
-      let l = Array.length(words) 
-      Array.sub(words, by, l-by) |> join_words
+    | true => Array.sub(words, 0, by) |> join_words
+    | false => Array.sub(words, by, l-by) |> join_words
     };
   })
 }
 
 let combine_halfs = (left: array(string), right: array(string)) : array(string) => {
-  left |> Array.mapi((idx, line) => line ++ " " ++ right[idx])
+  left |> Array.mapi((idx, line) => {
+    if (idx < Array.length(right) - 2){
+      (line ++ " " ++ right[idx])
+    } else ""
+  })
 } 
 
 let shuffle_array = (words: array(string)) : array(string) => {
@@ -101,18 +101,19 @@ let shuffle_array = (words: array(string)) : array(string) => {
   shuffle(len-1)
 }
 
-let lines_from_url = (url: string, line_size: int, left: bool) : array(string) => {
+let lines_from_url = (url: string, line_size: int) : array(string) => {
   fetchBody(url)
   |> Lwt_main.run
   |> text_from_body
   |> words_from_text
-  |> section(~max=line_size, _, ())
-  |> cut_strings(left, line_size) 
+  |> section(~max=line_size, _, ()) 
 }
 
 let create_fold_up = (url_left: string, url_right: string, line_size: int) : string => {
-  let left_half = lines_from_url(url_left, line_size, true)
-  let right_half = lines_from_url(url_right, line_size/2, false)
+  let left_half = lines_from_url(url_left, line_size) |> cut_lines(true, line_size/2)
+  let right_half = lines_from_url(url_right, line_size) |> cut_lines(false, line_size/2)
+
+  // right_half |> Array.iter(print_endline)
 
   combine_halfs(left_half, right_half)
   |> Array.fold_left((res, line)  => res ++ "\n" ++ line, "")

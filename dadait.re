@@ -3,6 +3,7 @@ open Cohttp_lwt_unix
 open Soup
 open Str
 
+// Global variables
 let cutup_counter = "./web/cutup_count.txt"
 let foldup_counter = "./web/foldup_count.txt"
 let file_sources = "./web/sources.txt"
@@ -10,6 +11,7 @@ let file_template = "./web/template.html"
 let file_fold_up = "web/fold-up.html"
 let file_index = "web/index.html"
 
+// Initialization of structures needed for multiple functions
 Random.init(int_of_float(Unix.time()));
 
 let get_date_str = () : string => {
@@ -119,10 +121,6 @@ let lines_from_url = (url: string, line_size: int) : array(string) => {
 let create_fold_up = (url_left: string, url_right: string, line_size: int) : string => {
   let left_half = lines_from_url(url_left, line_size) |> cut_lines(true, line_size/2)
   let right_half = lines_from_url(url_right, line_size) |> cut_lines(false, line_size/2)
-
-  // right_half |> Array.iter(print_endline)
-
-  // |> Array.fold_left((res, line)  => res ++ "\n" ++ "<p>" ++ line ++ "</p>", "")
 
   combine_halfs(left_half, right_half)
   |> rand_partition(10)

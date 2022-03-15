@@ -47,7 +47,12 @@ let cut_array = (arr: array(string), from: int, len: int, res: array(string)) : 
   |> Array.append(res)
 }
 
-let section =  (~rand=false, ~max: int, arr: array(string), ()) : array(string) => {
+let rand_partition = (len: int, arr: array(string)) : array(string) => {
+  let rnd = Random.int(len-1)
+  Array.sub(arr, rnd, len)
+}
+
+let section = (~rand=false, ~max: int, arr: array(string), ()) : array(string) => {
   let rec pick = (counter: int, acc: array(string)) : array(string) => {
     let limit = if (rand) Random.int(max) else max;
     let delim = counter + limit;
@@ -115,8 +120,11 @@ let create_fold_up = (url_left: string, url_right: string, line_size: int) : str
 
   // right_half |> Array.iter(print_endline)
 
+  // |> Array.fold_left((res, line)  => res ++ "\n" ++ "<p>" ++ line ++ "</p>", "")
+
   combine_halfs(left_half, right_half)
-  |> Array.fold_left((res, line)  => res ++ "\n" ++ line, "")
+  |> rand_partition(10)
+  |> Array.fold_left((res, line)  => res ++ "\n" ++ "<p>" ++ line ++ "<p>", "") //num of lines
 }
 
 let get_stanzas = (num_lines: int, lines: array(string)) => {
@@ -189,7 +197,7 @@ create_fold_up(url_left, url_right, 10)
 // let idx = global_replace(regexp("POEMHERE"), cu, tmpl) 
 // |> global_replace(regexp("DATEHERE"), ds)
 // |> global_replace(regexp("SOURCEHERE"), source)
-// |> global_replace(regexp("RUNHERE"), run_num)
+// |> global_replace(regexp("RUNHERE"), "Cut-up #" ++ run_num)
 
 // let out = open_out(file_index)
 // Printf.fprintf(out, "%s\n", idx)

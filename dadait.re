@@ -177,6 +177,24 @@ let random_source = (text: string) : string => {
   sources[idx]
 }
 
+let random_foldup_sources = (text: string) : (string, string) => {
+  let sources =  regexp("\n") |> split(_, text) |> Array.of_list
+  let idx_left = Array.length(sources) |> Random.int
+  let idx_right = Array.length(sources) |> Random.int
+  if (idx_left == idx_right) {
+    if (idx_right == 0) {
+      (sources[idx_left], sources[idx_right + 1])
+    } else if (idx_right == Array.length(sources)){
+      (sources[idx_left], sources[idx_right - 1])
+    } else {
+      // probably some bad sources file, whataver, use the same 
+      (sources[idx_left], sources[idx_right])
+    }
+  } else {
+    (sources[idx_left], sources[idx_right])
+  }
+}
+
 let foldup_to_html = (fold_up: string, source_left: string, source_right: string) : unit => {
   let run_num = (get_file(foldup_counter) |> String.trim |> int_of_string) + 1 |> string_of_int
   let tmpl = get_file(file_template)
@@ -216,12 +234,12 @@ let cutup_to_html = (cut_up: string, source: string) => {
 // let url_left = Array.get(Sys.argv, 1)
 // let url_right = Array.get(Sys.argv, 2)
 // let words_num = Array.get(Sys.argv, 3)
-let url_left = "https://theanarchistlibrary.org/library/david-graeber-what-s-the-point-if-we-can-t-have-fun-2";
-let url_right = "https://aurora.icaap.org/index.php/aurora/article/download/45/58/0";
+let all_sources = get_file(file_sources)
+
+let (url_left, url_right) = random_foldup_sources(all_sources)
 let fu = create_fold_up(url_left, url_right, 10)
 foldup_to_html(fu, url_left, url_right)
 
-let all_sources = get_file(file_sources)
 let source = random_source(all_sources);
 let cu = create_cut_up(source, 4) 
 cutup_to_html(cu, source)

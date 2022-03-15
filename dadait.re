@@ -3,9 +3,11 @@ open Cohttp_lwt_unix
 open Soup
 open Str
 
-let file_counter = "./web/count.txt"
+let cutup_counter = "./web/cutup_count.txt"
+let foldup_counter = "./web/foldup_count.txt"
 let file_sources = "./web/sources.txt"
 let file_template = "./web/template.html"
+let file_fold_up = "web/fold-up.html"
 let file_index = "web/index.html"
 
 Random.init(int_of_float(Unix.time()));
@@ -177,32 +179,51 @@ let random_source = (text: string) : string => {
   sources[idx]
 }
 
+let foldup_to_html = (fold_up: string, source_left: string, source_right: string) : unit => {
+  let run_num = (get_file(foldup_counter) |> String.trim |> int_of_string) + 1 |> string_of_int
+  let tmpl = get_file(file_template)
+  let ds = get_date_str()
+  let idx = global_replace(regexp("POEMHERE"), fold_up, tmpl) 
+  |> global_replace(regexp("DATEHERE"), ds)
+  |> global_replace(regexp("SOURCEHERE"), "Source Left: " ++ source_left ++ "<br>Source Right: " ++ source_right)
+  |> global_replace(regexp("RUNHERE"), "Fold-up #" ++ run_num)
+
+  let out = open_out(file_fold_up)
+  Printf.fprintf(out, "%s\n", idx)
+  close_out(out)
+
+  let out = open_out(foldup_counter)
+  Printf.fprintf(out, "%s\n", run_num)
+  close_out(out)
+}
+
+let cutup_to_html = (cut_up: string, source: string) => {
+  let run_num = (get_file(cutup_counter) |> String.trim |> int_of_string) + 1 |> string_of_int
+  let tmpl = get_file(file_template)
+  let ds = get_date_str()
+  let idx = global_replace(regexp("POEMHERE"), cut_up, tmpl) 
+  |> global_replace(regexp("DATEHERE"), ds)
+  |> global_replace(regexp("SOURCEHERE"), "Source: " ++ source)
+  |> global_replace(regexp("RUNHERE"), "Cut-up #" ++ run_num)
+
+  let out = open_out(file_index)
+  Printf.fprintf(out, "%s\n", idx)
+  close_out(out)
+
+  let out = open_out(cutup_counter)
+  Printf.fprintf(out, "%s\n", run_num)
+  close_out(out)
+}
+
 // let url_left = Array.get(Sys.argv, 1)
 // let url_right = Array.get(Sys.argv, 2)
 // let words_num = Array.get(Sys.argv, 3)
-
-// let all_sources = get_file(file_sources)
 let url_left = "https://theanarchistlibrary.org/library/david-graeber-what-s-the-point-if-we-can-t-have-fun-2";
 let url_right = "https://aurora.icaap.org/index.php/aurora/article/download/45/58/0";
-create_fold_up(url_left, url_right, 10)
-|> print_string
+let fu = create_fold_up(url_left, url_right, 10)
+foldup_to_html(fu, url_left, url_right)
 
-
-// let run_num = (get_file(file_counter) |> String.trim |> int_of_string) + 1 |> string_of_int
-// let all_sources = get_file(file_sources)
-// let source = random_source(all_sources);
-// let cu = create_cut_up(source, 4) 
-// let tmpl = get_file(file_template)
-// let ds = get_date_str()
-// let idx = global_replace(regexp("POEMHERE"), cu, tmpl) 
-// |> global_replace(regexp("DATEHERE"), ds)
-// |> global_replace(regexp("SOURCEHERE"), source)
-// |> global_replace(regexp("RUNHERE"), "Cut-up #" ++ run_num)
-
-// let out = open_out(file_index)
-// Printf.fprintf(out, "%s\n", idx)
-// close_out(out)
-
-// let out = open_out("web/count.txt")
-// Printf.fprintf(out, "%s\n", run_num)
-// close_out(out)
+let all_sources = get_file(file_sources)
+let source = random_source(all_sources);
+let cu = create_cut_up(source, 4) 
+cutup_to_html(cu, source)

@@ -48,6 +48,7 @@ let section =  (~rand=false, ~max: int, arr: array(string), ()) : array(string) 
   let rec pick = (counter: int, acc: array(string)) : array(string) => {
     let limit = if (rand) Random.int(max) else max;
     let delim = counter + limit;
+    print_string("what\n")
     switch(Array.length(arr) > delim) {
     | true => cut_array(arr, counter, limit, acc) |> pick(counter+(limit))
     | false => acc
@@ -65,9 +66,14 @@ let words_from_text = (text: string) : array(string) => {
 let cut_strings = (left: bool, by: int, lines: array(string)) : array(string) => {
   lines |> Array.map(line => {
     let words =  regexp(" ") |> split(_, line) |> Array.of_list
+    // error is happening here
+    print_string("here\n")
     switch(left) {
-    | true => Array.sub(words, 0, by) |> join_words
+    | true => 
+      print_string("true")
+      Array.sub(words, 0, by) |> join_words
     | false => 
+      print_string("false")
       let l = Array.length(words) 
       Array.sub(words, by, l-by) |> join_words
     };
@@ -166,23 +172,28 @@ let random_source = (text: string) : string => {
 // let url_right = Array.get(Sys.argv, 2)
 // let words_num = Array.get(Sys.argv, 3)
 
-// int_of_string(words_num) |> create_fold_up(url_left, url_right)
-//   |> print_string
-let run_num = (get_file(file_counter) |> String.trim |> int_of_string) + 1 |> string_of_int
-let all_sources = get_file(file_sources)
-let source = random_source(all_sources);
-let cu = create_cut_up(source, 4) 
-let tmpl = get_file(file_template)
-let ds = get_date_str()
-let idx = global_replace(regexp("POEMHERE"), cu, tmpl) 
-|> global_replace(regexp("DATEHERE"), ds)
-|> global_replace(regexp("SOURCEHERE"), source)
-|> global_replace(regexp("RUNHERE"), run_num)
+// let all_sources = get_file(file_sources)
+let url_left = "https://theanarchistlibrary.org/library/david-graeber-what-s-the-point-if-we-can-t-have-fun-2";
+let url_right = "https://aurora.icaap.org/index.php/aurora/article/download/45/58/0";
+create_fold_up(url_left, url_right, 10)
+|> print_string
 
-let out = open_out(file_index)
-Printf.fprintf(out, "%s\n", idx)
-close_out(out)
 
-let out = open_out("web/count.txt")
-Printf.fprintf(out, "%s\n", run_num)
-close_out(out)
+// let run_num = (get_file(file_counter) |> String.trim |> int_of_string) + 1 |> string_of_int
+// let all_sources = get_file(file_sources)
+// let source = random_source(all_sources);
+// let cu = create_cut_up(source, 4) 
+// let tmpl = get_file(file_template)
+// let ds = get_date_str()
+// let idx = global_replace(regexp("POEMHERE"), cu, tmpl) 
+// |> global_replace(regexp("DATEHERE"), ds)
+// |> global_replace(regexp("SOURCEHERE"), source)
+// |> global_replace(regexp("RUNHERE"), run_num)
+
+// let out = open_out(file_index)
+// Printf.fprintf(out, "%s\n", idx)
+// close_out(out)
+
+// let out = open_out("web/count.txt")
+// Printf.fprintf(out, "%s\n", run_num)
+// close_out(out)

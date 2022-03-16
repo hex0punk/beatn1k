@@ -184,11 +184,9 @@ let random_foldup_sources = (text: string) : (string, string) => {
   if (idx_left == idx_right) {
     if (idx_right == 0) {
       (sources[idx_left], sources[idx_right + 1])
-    } else if (idx_right == Array.length(sources)){
-      (sources[idx_left], sources[idx_right - 1])
     } else {
-      // probably some bad sources file, whataver, use the same 
-      (sources[idx_left], sources[idx_right])
+      // safe to go down the index by one on idx_right then
+      (sources[idx_left], sources[idx_right - 1])
     }
   } else {
     (sources[idx_left], sources[idx_right])

@@ -1,6 +1,6 @@
 ;; dune
 (executable
- (name cmd)
+ (name beatn1k)
  (libraries 
   str
   tls

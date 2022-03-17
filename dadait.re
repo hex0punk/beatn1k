@@ -56,11 +56,16 @@ let rand_partition = (len: int, arr: array(string)) : array(string) => {
   Array.sub(arr, rnd, len)
 }
 
+let rand_int = (max) => {
+  let rnd = Random.int(max);
+  if (rnd == 0) 1 else rnd
+}
+
 let section = (~rand=false, ~max: int, arr: array(string), ()) : array(string) => {
   let rec pick = (counter: int, acc: array(string)) : array(string) => {
-    let limit = if (rand) Random.int(max) else max;
+    let limit = if (rand) rand_int(max) else max;
     let delim = counter + limit;
-    switch(Array.length(arr) > delim) {
+    switch(Array.length(arr)-1 > delim) {
     | true => cut_array(arr, counter, limit, acc) |> pick(counter+(limit))
     | false => acc
     }
@@ -118,13 +123,20 @@ let lines_from_url = (url: string, line_size: int) : array(string) => {
   |> section(~max=line_size, _, ()) 
 }
 
-let create_fold_up = (url_left: string, url_right: string, line_size: int) : string => {
+let create_fold_up = (web: bool, url_left: string, url_right: string, line_size: int, stanza_s: int) : string => {
   let left_half = lines_from_url(url_left, line_size) |> cut_lines(true, line_size/2)
   let right_half = lines_from_url(url_right, line_size) |> cut_lines(false, line_size/2)
 
-  combine_halfs(left_half, right_half)
-  |> rand_partition(10)
-  |> Array.fold_left((res, line)  => res ++ "\n" ++ "<p>" ++ line ++ "<p>", "") //num of lines
+  let result = combine_halfs(left_half, right_half)
+  |> rand_partition(stanza_s)
+
+  if (web){
+    result
+    |> Array.fold_left((res, line)  => res ++ "\n" ++ "<p>" ++ line ++ "<p>", "") //num of lines
+  } else {
+    result
+    |> Array.fold_left((res, line)  => res ++ "\n" ++ line, "") //num of lines
+  }
 }
 
 let get_stanzas = (num_lines: int, lines: array(string)) => {
@@ -137,18 +149,27 @@ let get_stanzas = (num_lines: int, lines: array(string)) => {
   }
 }
 
-let create_cut_up = (url: string, max: int) : string => {
-  fetchBody(url)
+let create_cut_up = (web: bool, url: string, max_words: int, max_line: int, stanza_s: int) : string => {
+  let result = fetchBody(url)
     |> Lwt_main.run
     |> text_from_body
     |> words_from_text
-    |> rand_section(~max=max, _, ())
+    |> rand_section(~max=max_words, _, ())
     |> shuffle_array
-    |> rand_section(~max=max + 4, _, ())
-    |> get_stanzas(12) 
-    |> Array.fold_left((res, line)  => res ++ "\n" ++ "<p>" ++ line ++ "</p>", "")
-    |> global_replace(regexp("[\"\\(\\)]"), "")
-    |> global_replace(regexp("  +/g"), " ")
+    |> rand_section(~max=max_line, _, ())
+    |> get_stanzas(stanza_s) 
+
+    if (web){
+      result 
+      |> Array.fold_left((res, line)  => res ++ "\n" ++ "<p>" ++ line ++ "</p>", "")
+      |> global_replace(regexp("[\"\\(\\)]"), "")
+      |> global_replace(regexp("  +/g"), " ")
+    } else {
+      result 
+      |> Array.fold_left((res, line)  => res ++ "\n" ++ line, "")
+      |> global_replace(regexp("[\"\\(\\)]"), "")
+      |> global_replace(regexp("  +/g"), " ")
+    }
 }
 
 let get_file = (file: string) => {
@@ -172,7 +193,6 @@ let get_file = (file: string) => {
 
 let random_source = (text: string) : string => {
   let sources =  regexp("\n") |> split(_, text) |> Array.of_list
-  // sources |> Array.iter(print_endline)
   let idx = Array.length(sources) |> Random.int
   sources[idx]
 }
@@ -231,15 +251,41 @@ let cutup_to_html = (cut_up: string, source: string) => {
   close_out(out)
 }
 
-// let url_left = Array.get(Sys.argv, 1)
-// let url_right = Array.get(Sys.argv, 2)
-// let words_num = Array.get(Sys.argv, 3)
+
 let all_sources = get_file(file_sources)
 
-let (url_left, url_right) = random_foldup_sources(all_sources)
-let fu = create_fold_up(url_left, url_right, 10)
-foldup_to_html(fu, url_left, url_right)
+let run_cutup = (~web: bool, url: string, max_words: int, max_line: int, stanza_s: int) => {
+  let source = ref("")
+  if (url == "") {
+    source := random_source(all_sources);
+  } else {
+    source := url
+  }
+  print_string("Using source " ++ source^ ++ "\n")
+  let cu = create_cut_up(web, source^, max_words, max_line, stanza_s) 
+  if (web) {
+    cutup_to_html(cu, source^)
+  } else {
+    print_endline(cu)
+  }
+}
 
-let source = random_source(all_sources);
-let cu = create_cut_up(source, 4) 
-cutup_to_html(cu, source)
+let run_foldup = (~web: bool, url_1: string, url_2: string, max_line: int, stanza_s: int) => {
+  let source_1 = ref("")
+  let source_2 = ref("")
+  if (url_1 == "" || url_2 == ""){
+    let (url_left, url_right) = random_foldup_sources(all_sources)
+    if (url_1 == "") {
+      source_1 := url_left
+    } 
+    if (url_2 == "") {
+      source_2 := url_right
+    }
+  }
+  let fu = create_fold_up(web, source_1^, source_2^, max_line, stanza_s)
+  if (web){
+    foldup_to_html(fu, source_1^, source_2^)
+  } else {
+    print_endline(fu)
+  }
+}

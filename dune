@@ -1,8 +1,9 @@
 ;; dune
 (executable
- (name dadait)
+ (name cmd)
  (libraries 
   str
   tls
   lambdasoup
+  cmdliner
   cohttp-lwt-unix))

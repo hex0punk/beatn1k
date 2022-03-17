@@ -48,7 +48,13 @@ let cmd = {
     }
   };
 
-  Term.(const(run) $ web $ mode $ url_1 $ url_2 $ cut_s $ line_s $ stanza_s, info("beatn1k", ~doc));
+  let info = Cmd.info("beatn1k", ~doc)
+  let y = Term.(const(run) $ web $ mode $ url_1 $ url_2 $ cut_s $ line_s $ stanza_s);
+  Cmd.v(info, y)
+  // Cmd.v(info, Term.(const(run) $ web $ mode $ url_1 $ url_2 $ cut_s $ line_s $ stanza_s, info("beatn1k", ~doc)));
 };
 
-let () = Term.exit @@ Term.eval(cmd);
+let main () = exit (Cmd.eval(cmd))
+let () = main ()
+
+// let () = Term.exit @@ Term.eval(cmd);

@@ -1,0 +1,9 @@
+;; dune
+(executable
+ (name beatn1k)
+ (libraries 
+  str
+  tls
+  lambdasoup
+  cmdliner
+  cohttp-lwt-unix))

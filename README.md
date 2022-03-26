@@ -1,4 +1,6 @@
-![Tux, the Linux mascot](beatn1k.png)
+<p align="center">
+<img src="beatn1k.png" width=400>
+</p>
 
 # beatn1k
 

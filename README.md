@@ -1,3 +1,5 @@
+![Tux, the Linux mascot](beatn1k.png)
+
 # beatn1k
 
 beatn1k is a program that creates interesting text using the [fold-up and cut-up](https://en.wikipedia.org/wiki/Cut-up_technique) techniques. In case you haven't already clicked on that link, this is a technique that William S. Burroughs used to write weird books. Dadaists pioneered cut-ups to write weird, but interesting poems (see [How to Make a Dadaist Poem](https://www.writing.upenn.edu/~afilreis/88v/tzara.html)). 
